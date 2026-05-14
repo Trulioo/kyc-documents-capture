@@ -1,0 +1,24 @@
+{
+  "packageName": "TruliooKYCDocumentsCapture",
+  "libraryName": "TruliooKYCDocumentsCapture",
+  "targetName": "TruliooKYCDocumentsCapture",
+  "runtimeTargetName": "TruliooKYCDocumentsCaptureRuntime",
+  "distributionType": "binary",
+  "artifactName": "TruliooKYCDocumentsCapture.xcframework.zip",
+  "artifactUrl": "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0-beta.1/TruliooKYCDocumentsCapture.xcframework.zip",
+  "artifactSha256": "16b61b4d7c912a7901a32caa2fa975a6c4f1976e509293c98378c71953a0f4c2",
+  "secondaryArtifactName": "TruliooKYCDocumentsCaptureRuntime.xcframework.zip",
+  "secondaryArtifactUrl": "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0-beta.1/TruliooKYCDocumentsCaptureRuntime.xcframework.zip",
+  "secondaryArtifactSha256": "be13dd4e1be93cbc1219c77b2dc2b205ecc3c2abd287edc2d4effb56fb6c0897",
+  "sizeBytes": 15111516,
+  "secondarySizeBytes": 4651768,
+  "minimumIosVersion": "15.0",
+  "truliooPackageIdentity": "trulioo-ios",
+  "licenseFile": "LICENSE.md",
+  "packageFiles": [
+    "Package.swift",
+    "README.md",
+    "LICENSE.md",
+    "release-manifest.json"
+  ]
+}
