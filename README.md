@@ -11,7 +11,7 @@ A standard iOS Capture integration looks like this:
 1. add the `TruliooKYCDocumentsCapture` Swift package
 2. initialize the runtime with a shortcode
 3. create a camera for document or selfie capture
-4. render the camera into a `UIView`
+4. render the camera and embed the returned `UIViewController`
 5. use `startFeedback(...)` for auto capture or `captureLatestFrame(...)` for manual capture
 6. use `verifyImage()` and `acceptImage()` on the returned image result
 7. call `submit(...)` when all required images have been accepted
@@ -34,7 +34,7 @@ The public SwiftPM package includes:
 
 Host applications must:
 
-- render the camera into a live `UIView`
+- embed the SDK-owned camera `UIViewController` into the host UI
 - handle iOS camera permission flow
 - provide a valid Capture shortcode
 - decide whether a verified image should be accepted
@@ -89,6 +89,7 @@ import UIKit
 final class CaptureHostViewController: UIViewController {
     private let capture = TruliooCaptureRuntimeLive()
     @IBOutlet private weak var cameraContainer: UIView!
+    private var cameraViewController: UIViewController?
 
     func startCapture(shortcode: String) {
         capture.initialize(
@@ -109,7 +110,9 @@ final class CaptureHostViewController: UIViewController {
                 )
             )
 
-            camera.renderCamera(view: self.cameraContainer, cameraProps: nil)
+            let controller = camera.render(cameraProps: nil)
+            self.embedCameraController(controller)
+            self.cameraViewController = controller
 
             camera.startFeedback { error, response in
                 guard error == nil, let response else {
@@ -143,8 +146,44 @@ final class CaptureHostViewController: UIViewController {
             }
         }
     }
+
+    private func embedCameraController(_ controller: UIViewController) {
+        addChild(controller)
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+        cameraContainer.addSubview(controller.view)
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: cameraContainer.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: cameraContainer.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: cameraContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: cameraContainer.bottomAnchor),
+        ])
+        controller.didMove(toParent: self)
+    }
+
+    private func removeCameraController() {
+        guard let controller = cameraViewController else { return }
+
+        controller.willMove(toParent: nil)
+        controller.view.removeFromSuperview()
+        controller.removeFromParent()
+        cameraViewController = nil
+    }
 }
 ```
+
+Call `removeCameraController()` when:
+
+- replacing the current camera with a different camera instance
+- dismissing or tearing down the host capture flow
+- resetting the surrounding screen and removing the embedded Capture UI
+
+The important lifecycle is:
+
+1. `willMove(toParent: nil)`
+2. `view.removeFromSuperview()`
+3. `removeFromParent()`
+
+That teardown should be paired with the SDK camera lifecycle as well. If the camera instance is no longer needed, also call `camera.remove()` so the SDK can release camera resources.
 
 ## Public Entry Points And When To Use Them
 
@@ -161,8 +200,8 @@ Main runtime entry points:
 
 Main camera entry points:
 
-- `renderCamera(view:cameraProps:)`
-  Attach the camera to a host `UIView`.
+- `render(cameraProps:)`
+  Return an SDK-owned `UIViewController` that hosts the camera UI. Embed that controller in UIKit or bridge it into SwiftUI with `UIViewControllerRepresentable`.
 - `startFeedback(...)`
   Run auto capture until the SDK accepts a candidate frame.
 - `startFeedback(filter:result:)`
@@ -205,13 +244,15 @@ The normal Capture flow is:
 
 1. call `initialize(...)`
 2. create a camera with `ContractTruliooCameraConfig`
-3. render the camera into a `UIView`
-4. call `startFeedback(...)` or `captureLatestFrame(...)`
-5. inspect the result using `verifyImage()`
-6. call `acceptImage()` if the host application wants to keep that image
-7. repeat for additional required images
-8. call `submit(...)`
-9. call `reset()`
+3. call `render(cameraProps:)`
+4. embed the returned `UIViewController`
+5. call `startFeedback(...)` or `captureLatestFrame(...)`
+6. inspect the result using `verifyImage()`
+7. call `acceptImage()` if the host application wants to keep that image
+8. repeat for additional required images
+9. call `submit(...)`
+10. call `reset()`
+11. remove the embedded camera `UIViewController` from the parent hierarchy using the cleanup pattern above
 
 `submit(...)` finalizes the active transaction. `reset()` clears local Capture state and should be called before reusing the runtime for a new transaction.
 
@@ -285,7 +326,7 @@ Recommended host-side acceptance rule:
 - Initialization fails:
   Confirm the shortcode is valid and the host app is using the expected environment.
 - Camera view stays blank:
-  Confirm the `UIView` is attached, visible, and camera permission is granted.
+  Confirm the returned camera `UIViewController` is retained, embedded in the active view hierarchy, and camera permission is granted.
 - Auto capture never resolves:
   Inspect `onFeedbackState()` to see whether the SDK is repeatedly asking for a retake condition.
 - Submit fails after capture:
