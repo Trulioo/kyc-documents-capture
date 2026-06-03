@@ -70,13 +70,14 @@ Link the products you use:
 )
 ```
 
-Import the modules:
+Import the modules you use:
 
 ```swift
-import Trulioo
 import TruliooKYCDocumentsCapture
 import TruliooKYCDocumentsCaptureRuntime
 ```
+
+Import `Trulioo` only when the host application also uses the base `Trulioo` SDK directly.
 
 ## Quick Start
 
@@ -94,7 +95,7 @@ final class CaptureHostViewController: UIViewController {
     func startCapture(shortcode: String) {
         capture.initialize(
             shortcode: shortcode,
-            options: Trulioo.InitializationOptions()
+            options: TruliooCaptureInitializationOptions()
         ) { [weak self] error, transactionId in
             guard let self else { return }
             guard error == nil else {
@@ -189,6 +190,8 @@ That teardown should be paired with the SDK camera lifecycle as well. If the cam
 
 Main runtime entry points:
 
+- `TruliooCaptureRuntimeLive.initialize(shortcode:locale:completion:)`
+  Start or resume the active Capture transaction with default runtime options.
 - `TruliooCaptureRuntimeLive.initialize(shortcode:options:locale:completion:)`
   Start or resume the active Capture transaction.
 - `TruliooCaptureRuntimeLive.createCamera(config:)`
@@ -208,10 +211,6 @@ Main camera entry points:
   Run auto capture with a caller-provided acceptance predicate.
 - `captureLatestFrame(...)`
   Perform a manual capture from the latest available frame.
-- `verifyImage()`
-  Request post-capture verification feedback.
-- `acceptImage()`
-  Accept the image into the active transaction.
 - `stopFeedback()`
   Stop an active auto-capture session.
 - `onFeedbackState()`
@@ -224,6 +223,13 @@ Main camera entry points:
   Resume preview after interruption or review.
 - `remove()`
   Tear down the rendered camera and release resources.
+
+Capture result entry points:
+
+- `verifyImage()`
+  Request post-capture verification feedback. Call this on the `TruliooCaptureResponse` or `TruliooManualCaptureResponse` returned by `startFeedback(...)` or `captureLatestFrame(...)`.
+- `acceptImage()`
+  Accept the image into the active transaction. Call this on the `TruliooCaptureResponse` or `TruliooManualCaptureResponse` returned by `startFeedback(...)` or `captureLatestFrame(...)`.
 
 ## Initialization Flow
 
@@ -332,7 +338,7 @@ Recommended host-side acceptance rule:
 - Submit fails after capture:
   Confirm the expected images were accepted before submission.
 
-## Support Handoff Checklist
+## Diagnostic Capture Checklist
 
 When escalating an iOS Capture issue, collect:
 
