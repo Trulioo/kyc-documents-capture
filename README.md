@@ -4,6 +4,12 @@
 
 # Trulioo KYC Documents Capture iOS Guide
 
+## Audience And Scope
+
+Use this guide when integrating host-owned document or selfie camera capture into an iOS app.
+
+This guide covers the public Swift package, Capture runtime initialization, camera controller embedding, image verification and acceptance, transaction submission, and support evidence. Use the KYC Documents iOS guide when the hosted Docs UI owns the full document verification flow.
+
 ## Quick Summary
 
 A standard iOS Capture integration looks like this:
@@ -17,7 +23,7 @@ A standard iOS Capture integration looks like this:
 7. call `submit(...)` when all required images have been accepted
 8. call `reset()` when the host app is done with the transaction or needs a fresh session
 
-## Package And Compatibility
+## Package Or Artifact Identity
 
 - GitHub repository: `https://github.com/Trulioo/kyc-documents-capture.git`
 - package name: `TruliooKYCDocumentsCapture`
@@ -79,7 +85,7 @@ import TruliooKYCDocumentsCaptureRuntime
 
 Import `Trulioo` only when the host application also uses the base `Trulioo` SDK directly.
 
-## Quick Start
+## Quick-Start Example
 
 ```swift
 import Trulioo
@@ -186,7 +192,7 @@ The important lifecycle is:
 
 That teardown should be paired with the SDK camera lifecycle as well. If the camera instance is no longer needed, also call `camera.remove()` so the SDK can release camera resources.
 
-## Public Entry Points And When To Use Them
+## Public Entrypoints And When To Use Them
 
 Main runtime entry points:
 
@@ -262,6 +268,10 @@ The normal Capture flow is:
 
 `submit(...)` finalizes the active transaction. `reset()` clears local Capture state and should be called before reusing the runtime for a new transaction.
 
+## Device Send Flow And Debug Wait Flow
+
+The Device Intelligence send and debug wait paths do not apply to the Capture SDK. Capture submission is finalized through `submit(...)` after the required accepted images are associated with the active transaction.
+
 ## Caller-Owned Versus SDK-Owned Data
 
 The host application owns:
@@ -282,7 +292,7 @@ The SDK owns:
 - transaction-scoped image ids and feedback payloads
 - accepted-image association with the active transaction
 
-## Polling And Capture Defaults
+## Polling Defaults
 
 The public iOS Capture contract does not require host configuration for upload pacing or frame timing.
 
@@ -349,3 +359,15 @@ When escalating an iOS Capture issue, collect:
 - the returned transaction id when available
 - the latest feedback state or verify responses
 - whether the failure happened at initialize, capture, verify, accept, or submit
+
+## Support Handoff Checklist
+
+When handing an issue to Trulioo support, include:
+
+- the package version and release channel
+- the shortcode environment, without sharing secrets in public tickets
+- iOS version, device model, and host presentation mode
+- capture step type: document or selfie
+- whether capture used auto feedback or manual capture
+- transaction id when available
+- latest feedback state, verify responses, and failing stage
