@@ -17,18 +17,18 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/Trulioo/trulioo-ios.git", exact: "3.1.0-beta.6"),
+        .package(url: "https://github.com/Trulioo/trulioo-ios.git", exact: "3.1.0"),
     ],
     targets: [
         .binaryTarget(
             name: "TruliooKYCDocumentsCapture",
-            url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0-beta.6/TruliooKYCDocumentsCapture.xcframework.zip",
-            checksum: "1495e31ec740b024cb34ee927d16856292fd4b650b85b8b12ce905b923daf3d3"
+            url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0/TruliooKYCDocumentsCapture.xcframework.zip",
+            checksum: "52a2ea0dcf63a8c1fcbbf7c0ab77e054b007059717efa444b598681edb7e4eda"
         ),
         .binaryTarget(
             name: "TruliooKYCDocumentsCaptureRuntime",
-            url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0-beta.6/TruliooKYCDocumentsCaptureRuntime.xcframework.zip",
-            checksum: "8953e298b1fe675c5ffdba2435e8b1e3560d857e10e714357bd3bdb93d48319f"
+            url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0/TruliooKYCDocumentsCaptureRuntime.xcframework.zip",
+            checksum: "00d392aa1e8dc129284cf114dc3d7f57d99a96e3833d9924b933acbfe4563412"
         ),
         .target(
             name: "TruliooKYCDocumentsCaptureDependencies",
