@@ -23,12 +23,12 @@ let package = Package(
         .binaryTarget(
             name: "TruliooKYCDocumentsCapture",
             url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0/TruliooKYCDocumentsCapture.xcframework.zip",
-            checksum: "b34a8c51b27d8a258a31011279f6b2357e559095887683c561074425a590147d"
+            checksum: "ba6b7daa7c0c9225d11092cb4f877fca89df242351d028daeaef3c43d729d9f3"
         ),
         .binaryTarget(
             name: "TruliooKYCDocumentsCaptureRuntime",
             url: "https://github.com/Trulioo/kyc-documents-capture/releases/download/3.1.0/TruliooKYCDocumentsCaptureRuntime.xcframework.zip",
-            checksum: "0fc89b3b290645216cfced42176dd9db4f78dfd6b104d84eb1d5840570772862"
+            checksum: "197558de49c299d51480b14a7bee2dc7d9e6d57d0e884dd8d8d46af0cbc92b93"
         ),
         .target(
             name: "TruliooKYCDocumentsCaptureDependencies",
