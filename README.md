@@ -8,9 +8,20 @@
 
 Use this guide when integrating host-owned document or selfie camera capture into an iOS app.
 
-This guide covers the public Swift package, Capture runtime initialization, camera controller embedding, image verification and acceptance, transaction submission, and support evidence. Use the KYC Documents iOS guide when the hosted Docs UI owns the full document verification flow.
+This guide covers the public Swift package, Capture runtime initialization, camera controller embedding, image verification and acceptance, transaction submission, and support evidence. Use the KYC Documents iOS guide when the hosted KYC Documents UI owns the full document verification flow.
 
 ## Quick Summary
+
+The Trulioo KYC Documents Capture iOS SDK provides document and selfie capture capabilities that can be embedded in an iOS host screen.
+
+Customer applications can expect the SDK to:
+
+- initialize the active capture transaction from a shortcode
+- create a document or selfie camera for the active transaction
+- return a camera `UIViewController` for UIKit embedding or SwiftUI bridging
+- return capture feedback or manual capture results
+- verify and accept captured images before submission
+- submit accepted images and return iOS-native success or error callbacks
 
 A standard iOS Capture integration looks like this:
 
@@ -56,26 +67,6 @@ dependencies: [
 ]
 ```
 
-For beta builds, pin the prerelease tag explicitly:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/Trulioo/kyc-documents-capture.git", exact: "X.Y.Z-beta.N")
-]
-```
-
-Link the products you use:
-
-```swift
-.target(
-    name: "YourApp",
-    dependencies: [
-        .product(name: "TruliooKYCDocumentsCapture", package: "kyc-documents-capture"),
-        .product(name: "TruliooKYCDocumentsCaptureRuntime", package: "kyc-documents-capture"),
-    ]
-)
-```
-
 Import the modules you use:
 
 ```swift
@@ -87,25 +78,24 @@ Import `Trulioo` only when the host application also uses the base `Trulioo` SDK
 
 ## Quick-Start Example
 
+In your view controller or capture coordinator:
+
 ```swift
-import Trulioo
 import TruliooKYCDocumentsCapture
 import TruliooKYCDocumentsCaptureRuntime
 import UIKit
 
-final class CaptureHostViewController: UIViewController {
+final class CaptureCoordinator {
     private let capture = TruliooCaptureRuntimeLive()
-    @IBOutlet private weak var cameraContainer: UIView!
-    private var cameraViewController: UIViewController?
 
-    func startCapture(shortcode: String) {
-        capture.initialize(
-            shortcode: shortcode,
-            options: TruliooCaptureInitializationOptions()
-        ) { [weak self] error, transactionId in
+    func startCapture(
+        shortcode: String,
+        presentCamera: @escaping (UIViewController) -> Void
+    ) {
+        capture.initialize(shortcode: shortcode) { [weak self] error, transactionId in
             guard let self else { return }
-            guard error == nil else {
-                print("Initialize failed:", error!)
+            if let error {
+                print("Initialize failed:", error)
                 return
             }
 
@@ -118,12 +108,16 @@ final class CaptureHostViewController: UIViewController {
             )
 
             let controller = camera.render(cameraProps: nil)
-            self.embedCameraController(controller)
-            self.cameraViewController = controller
+            presentCamera(controller)
 
             camera.startFeedback { error, response in
-                guard error == nil, let response else {
-                    print("Auto capture failed:", error!)
+                if let error {
+                    print("Auto capture failed:", error)
+                    return
+                }
+
+                guard let response else {
+                    print("Auto capture did not return an image")
                     return
                 }
 
@@ -144,6 +138,7 @@ final class CaptureHostViewController: UIViewController {
                                 return
                             }
 
+                            camera.remove()
                             self.capture.reset()
                         }
                     } catch {
@@ -153,44 +148,20 @@ final class CaptureHostViewController: UIViewController {
             }
         }
     }
-
-    private func embedCameraController(_ controller: UIViewController) {
-        addChild(controller)
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        cameraContainer.addSubview(controller.view)
-        NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: cameraContainer.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: cameraContainer.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: cameraContainer.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: cameraContainer.bottomAnchor),
-        ])
-        controller.didMove(toParent: self)
-    }
-
-    private func removeCameraController() {
-        guard let controller = cameraViewController else { return }
-
-        controller.willMove(toParent: nil)
-        controller.view.removeFromSuperview()
-        controller.removeFromParent()
-        cameraViewController = nil
-    }
 }
 ```
 
-Call `removeCameraController()` when:
+Embed or present the returned camera `UIViewController` using the host application's normal UIKit or SwiftUI container pattern.
 
-- replacing the current camera with a different camera instance
-- dismissing or tearing down the host capture flow
-- resetting the surrounding screen and removing the embedded Capture UI
+When removing an embedded UIKit child controller, use the normal child-controller teardown sequence:
 
-The important lifecycle is:
+```swift
+controller.willMove(toParent: nil)
+controller.view.removeFromSuperview()
+controller.removeFromParent()
+```
 
-1. `willMove(toParent: nil)`
-2. `view.removeFromSuperview()`
-3. `removeFromParent()`
-
-That teardown should be paired with the SDK camera lifecycle as well. If the camera instance is no longer needed, also call `camera.remove()` so the SDK can release camera resources.
+Pair host UI teardown with `camera.remove()` when the camera instance is no longer needed.
 
 ## Public Entrypoints And When To Use Them
 
