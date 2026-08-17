@@ -300,14 +300,6 @@ Recommended host-side acceptance rule:
 - do not reuse a stale shortcode after `reset()`
 - after calling `reset()`, a new `initialize(...)` call is required before reuse
 
-## Common Mistakes
-
-- creating a camera before initialization succeeds
-- not retaining the runtime long enough for callbacks and async verify work
-- assuming `submit(...)` also clears the local session
-- treating an initialization-superseded error as a fatal product failure
-- verifying the same image repeatedly after `isVerifyAttemptAvailable` is false
-
 ## Troubleshooting
 
 - Initialization fails:
