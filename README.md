@@ -1,16 +1,18 @@
-<!--
-(C) 2026 Trulioo. All rights reserved.
--->
-
 # Trulioo KYC Documents Capture iOS Guide
 
-## Audience And Scope
+The KYC Documents Capture SDK gives your organization full control over the document and selfie capture experience. You own the UI, branding, and flow; Trulioo provides the underlying image capture and verification technology.
+
+Build capture experiences that align with your brand guidelines, with custom overlays, animations, and messaging, while relying on Trulioo's built-in verification intelligence for accuracy and security.
+
+Looking for a ready-made solution? Use the KYC Documents SDK instead. It provides the same capture and verification technology with a complete Trulioo-designed UI and minimal setup.
+
+## Quick Summary
 
 Use this guide when integrating host-owned document or selfie camera capture into an iOS app.
 
 This guide covers the public Swift package, Capture runtime initialization, camera controller embedding, image verification and acceptance, transaction submission, and support evidence. Use the KYC Documents iOS guide when the hosted KYC Documents UI owns the full document verification flow.
 
-## Quick Summary
+### Standard Capture Flow
 
 The Trulioo KYC Documents Capture iOS SDK provides document and selfie capture capabilities that can be embedded in an iOS host screen.
 
@@ -34,7 +36,7 @@ A standard iOS Capture integration looks like this:
 7. call `submit(...)` when all required images have been accepted
 8. call `reset()` when the host app is done with the transaction or needs a fresh session
 
-## Package Or Artifact Identity
+## Package And Compatibility
 
 - GitHub repository: `https://github.com/Trulioo/kyc-documents-capture.git`
 - package name: `TruliooKYCDocumentsCapture`
@@ -47,7 +49,7 @@ The public SwiftPM package includes:
 - the `TruliooKYCDocumentsCaptureRuntime` Swift bridge
 - the upstream `Trulioo` dependency pinned by the package release metadata
 
-## Platform Requirements And Dependencies
+## iOS-Specific Background
 
 Host applications must:
 
@@ -76,7 +78,16 @@ import TruliooKYCDocumentsCaptureRuntime
 
 Import `Trulioo` only when the host application also uses the base `Trulioo` SDK directly.
 
-## Quick-Start Example
+## Before You Start
+
+Before starting a Capture flow, make sure the host application:
+
+- has a valid shortcode generated through the Trulioo customer handoff flow using the [Customer API 3.0 handoff operation](https://developer.trulioo.com/reference/posthandoff)
+- uses a shortcode configured for the document or selfie capture journey
+- has a presentation path for the SDK camera view controller
+- handles iOS camera permission
+
+## Initialization
 
 In your view controller or capture coordinator:
 
@@ -163,7 +174,15 @@ controller.removeFromParent()
 
 Pair host UI teardown with `camera.remove()` when the camera instance is no longer needed.
 
-## Public Entrypoints And When To Use Them
+### What Initialization Does
+
+`initialize(...)` configures the Capture bridge, authorizes the active transaction, fetches Capture configuration, and returns the transaction id through its completion handler. It must complete before the application creates a camera.
+
+### Initialization Result
+
+The completion handler provides the active transaction id. Retain it for host diagnostics and support correlation; the Capture runtime retains the active session until `reset()` is called.
+
+## Public API Reference
 
 Main runtime entry points:
 
@@ -208,20 +227,9 @@ Capture result entry points:
 - `acceptImage()`
   Accept the image into the active transaction. Call this on the `TruliooCaptureResponse` or `TruliooManualCaptureResponse` returned by `startFeedback(...)` or `captureLatestFrame(...)`.
 
-## Initialization Flow
-
-`initialize(...)`:
-
-1. configures the Capture runtime bridge for the active session
-2. authorizes the session from the shortcode
-3. fetches Capture configuration
-4. returns the active transaction id
-
-Initialization must complete successfully before creating cameras.
-
 If a newer initialize call supersedes an older one, the older completion may receive `TruliooCaptureInitializationSupersededError`.
 
-## Capture Flow
+## Capture Capabilities
 
 The normal Capture flow is:
 
@@ -239,11 +247,11 @@ The normal Capture flow is:
 
 `submit(...)` finalizes the active transaction. `reset()` clears local Capture state and should be called before reusing the runtime for a new transaction.
 
-## Device Send Flow And Debug Wait Flow
+### Device Intelligence
 
 The Device Intelligence send and debug wait paths do not apply to the Capture SDK. Capture submission is finalized through `submit(...)` after the required accepted images are associated with the active transaction.
 
-## Caller-Owned Versus SDK-Owned Data
+### Host And SDK Responsibilities
 
 The host application owns:
 
@@ -263,7 +271,7 @@ The SDK owns:
 - transaction-scoped image ids and feedback payloads
 - accepted-image association with the active transaction
 
-## Polling Defaults
+### Default Capture Behavior
 
 The public iOS Capture contract does not require host configuration for upload pacing or frame timing.
 
@@ -273,7 +281,7 @@ Important defaults:
 - `startFeedback(...)` uses the SDK default acceptance behavior
 - `submit(...)` does not clear local state by itself
 
-## Result Handling
+### Result Handling
 
 `startFeedback(...)` returns `TruliooCaptureResponse`.
 
@@ -294,11 +302,17 @@ Recommended host-side acceptance rule:
 
 - treat `SUCCESS` and `SUCCESS_REQUIRES_BACK` as accepted verify outcomes unless your product has a stricter policy
 
-## Environment And Shortcode Rules
+## Resetting State
 
 - always initialize with a shortcode created for the active transaction
 - do not reuse a stale shortcode after `reset()`
 - after calling `reset()`, a new `initialize(...)` call is required before reuse
+
+## Error Handling
+
+- Initialization, capture, verification, acceptance, and submission report errors through their documented completion handlers or thrown async errors; handle them before continuing the flow.
+- Do not use cameras or image results after `reset()`; initialize a new Capture session first.
+- Call `stopFeedback()` to end an active auto-capture attempt, then update the host UI from the resulting callback or error.
 
 ## Troubleshooting
 
@@ -310,27 +324,3 @@ Recommended host-side acceptance rule:
   Inspect `onFeedbackState()` to see whether the SDK is repeatedly asking for a retake condition.
 - Submit fails after capture:
   Confirm the expected images were accepted before submission.
-
-## Diagnostic Capture Checklist
-
-When escalating an iOS Capture issue, collect:
-
-- Capture SDK version
-- iOS version and device model
-- whether the flow was document or selfie
-- whether the issue was auto capture or manual capture
-- the returned transaction id when available
-- the latest feedback state or verify responses
-- whether the failure happened at initialize, capture, verify, accept, or submit
-
-## Support Handoff Checklist
-
-When handing an issue to Trulioo support, include:
-
-- the package version and release channel
-- the shortcode environment, without sharing secrets in public tickets
-- iOS version, device model, and host presentation mode
-- capture step type: document or selfie
-- whether capture used auto feedback or manual capture
-- transaction id when available
-- latest feedback state, verify responses, and failing stage
